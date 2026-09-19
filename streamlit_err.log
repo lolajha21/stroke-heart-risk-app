@@ -1,0 +1,14 @@
+2026-09-16 10:47:42.868 Uvicorn server started on :::8502
+Exception in callback _ProactorBasePipeTransport._call_connection_lost()
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost()>
+Traceback (most recent call last):
+  File "C:\Users\prish\AppData\Local\Programs\Python\Python314\Lib\asyncio\events.py", line 94, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\prish\AppData\Local\Programs\Python\Python314\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [WinError 10054] Eine vorhandene Verbindung wurde vom Remotehost geschlossen
+Background dataset has 4088 samples but max_samples=100. Subsampling to 100 samples for SHAP value computation. To use all samples, set max_samples=4088 when initializing the masker.
+Background dataset has 237 samples but max_samples=100. Subsampling to 100 samples for SHAP value computation. To use all samples, set max_samples=237 when initializing the masker.
+Background dataset has 237 samples but max_samples=100. Subsampling to 100 samples for SHAP value computation. To use all samples, set max_samples=237 when initializing the masker.
