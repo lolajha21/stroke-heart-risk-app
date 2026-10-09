@@ -48,6 +48,22 @@ def load_heart_background():
     X_train, _, _, _ = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
     return X_train
 
+
+def group_contributions(feature_names, contributions, kategorische_spalten):
+    """Fasst die One-Hot-Spalten (z.B. smoking_status_smokes, smoking_status_never
+    smoked) wieder zum ursprünglichen Merkmal zusammen. SHAP-Werte sind additiv,
+    daher ist die Summe der Dummy-Spalten der Beitrag des gesamten Merkmals.
+    Rückgabe: (Merkmal, Beitrag)-Paare, absteigend nach Betrag sortiert."""
+    grouped = {}
+    for feature, value in zip(feature_names, contributions):
+        group = next(
+            (spalte for spalte in kategorische_spalten if feature.startswith(spalte + "_")),
+            feature,
+        )
+        grouped[group] = grouped.get(group, 0.0) + value
+    return sorted(grouped.items(), key=lambda pair: abs(pair[1]), reverse=True)
+
+
 with tab_stroke:
     age = st.number_input("Alter", min_value=0, max_value=120, value=30)
     hypertension = st.selectbox("Bluthochdruck (Hypertonie)", ["Ja", "Nein"])
@@ -141,27 +157,25 @@ with tab_stroke:
         slope = probability * (1 - probability)
         contributions = shap_values.values[0] * slope * 100
 
+        # Kategorische Merkmale zeigen den tatsächlich eingegebenen Wert an
         feature_labels = {
             "age": "Alter",
-            "hypertension": "Bluthochdruck",
-            "heart_disease": "Herzerkrankung",
+            "hypertension": f"Bluthochdruck: {hypertension.lower()}",
+            "heart_disease": f"Herzerkrankung: {heart_disease.lower()}",
             "avg_glucose_level": "Glukosewert",
             "bmi": "BMI",
-            "gender_Male": "Geschlecht: männlich",
-            "gender_Other": "Geschlecht: divers",
-            "ever_married_Yes": "Verheiratet",
-            "work_type_Never_worked": "Arbeit: nie gearbeitet",
-            "work_type_Private": "Arbeit: Privatwirtschaft",
-            "work_type_Self-employed": "Arbeit: selbstständig",
-            "work_type_children": "Arbeit: Kind",
-            "Residence_type_Urban": "Wohnort: städtisch",
-            "smoking_status_formerly smoked": "Raucherstatus: früher geraucht",
-            "smoking_status_never smoked": "Raucherstatus: nie geraucht",
-            "smoking_status_smokes": "Raucherstatus: raucht",
+            "gender": f"Geschlecht: {gender.lower()}",
+            "ever_married": f"Jemals verheiratet: {ever_married.lower()}",
+            "work_type": f"Arbeit: {work_type}",
+            "Residence_type": f"Wohnort: {Residence_type.lower()}",
+            "smoking_status": f"Raucherstatus: {smoking_status}",
         }
 
-        contribution_pairs = list(zip(model.feature_names_in_, contributions))
-        contribution_pairs.sort(key=lambda pair: abs(pair[1]), reverse=True)
+        contribution_pairs = group_contributions(
+            model.feature_names_in_,
+            contributions,
+            ["gender", "ever_married", "work_type", "Residence_type", "smoking_status"],
+        )
 
         st.write("**Einflussreichste Merkmale:**")
         for feature, value in contribution_pairs[:5]:
@@ -330,29 +344,28 @@ with tab_heart:
         slope = probability * (1 - probability)
         contributions = shap_values.values[0] * slope * 100
 
+        # Kategorische Merkmale zeigen den tatsächlich eingegebenen Wert an
         feature_labels = {
             "age": "Alter",
-            "sex": "Geschlecht: männlich",
+            "sex": f"Geschlecht: {h_sex.lower()}",
             "trestbps": "Blutdruck (in Ruhe)",
             "chol": "Cholesterin",
-            "fbs": "Blutzucker über 120 mg/dl",
+            "fbs": f"Blutzucker über 120 mg/dl: {h_fbs.lower()}",
             "thalach": "Maximale Herzfrequenz",
-            "exang": "Brustschmerzen bei Belastung",
+            "exang": f"Brustschmerzen bei Belastung: {h_exang.lower()}",
             "oldpeak": "ST-Streckensenkung (Oldpeak)",
             "ca": "Anzahl großer Gefäße",
-            "cp_1": "Brustschmerz: untypisch",
-            "cp_2": "Brustschmerz: ohne Herzursache",
-            "cp_3": "Brustschmerz: keiner (asymptomatisch)",
-            "restecg_1": "Ruhe-EKG: leichte Auffälligkeit",
-            "restecg_2": "Ruhe-EKG: verdickte linke Herzkammer",
-            "slope_1": "ST-Verlauf unter Belastung: flach",
-            "slope_2": "ST-Verlauf unter Belastung: absteigend",
-            "thal_1": "Durchblutungstest: dauerhafter Defekt",
-            "thal_2": "Durchblutungstest: vorübergehender Defekt",
+            "cp": f"Brustschmerz: {h_cp}",
+            "restecg": f"Ruhe-EKG: {h_restecg}",
+            "slope": f"ST-Verlauf unter Belastung: {h_slope}",
+            "thal": f"Durchblutungstest: {h_thal}",
         }
 
-        contribution_pairs = list(zip(model.feature_names_in_, contributions))
-        contribution_pairs.sort(key=lambda pair: abs(pair[1]), reverse=True)
+        contribution_pairs = group_contributions(
+            model.feature_names_in_,
+            contributions,
+            ["cp", "restecg", "slope", "thal"],
+        )
 
         st.write("**Einflussreichste Merkmale:**")
         for feature, value in contribution_pairs[:5]:
