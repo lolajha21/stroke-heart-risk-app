@@ -76,15 +76,18 @@ def group_contributions(feature_names, contributions, kategorische_spalten):
 
 
 with tab_stroke:
-    age_min, age_max = load_age_range("data/stroke.csv")
+    # Untergrenze fest auf 18, da sich die App an Erwachsene richtet
+    # (stroke.csv enthält auch Kinder); Obergrenze aus den Daten
+    _, age_max = load_age_range("data/stroke.csv")
+    age_min = 18
     age = st.number_input(
         "Alter",
         min_value=age_min,
         max_value=age_max,
         value=min(max(30, age_min), age_max),
         help=(
-            f"Erlaubter Bereich: {age_min} bis {age_max} Jahre. "
-            "Das Modell wurde mit Personen in diesem Altersbereich trainiert."
+            "Die App richtet sich an Erwachsene. "
+            f"Erlaubter Bereich: {age_min} bis {age_max} Jahre."
         ),
     )
     hypertension = st.selectbox("Bluthochdruck (Hypertonie)", ["Ja", "Nein"])
