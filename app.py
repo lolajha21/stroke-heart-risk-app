@@ -49,6 +49,14 @@ def load_heart_background():
     return X_train
 
 
+@st.cache_data
+def load_heart_age_range():
+    """Kleinstes und größtes Alter im Trainingsdatensatz, damit das Eingabefeld
+    nicht außerhalb des Bereichs liegt, den das Modell kennt."""
+    df = pd.read_csv("data/heart.csv")
+    return int(df["age"].min()), int(df["age"].max())
+
+
 def group_contributions(feature_names, contributions, kategorische_spalten):
     """Fasst die One-Hot-Spalten (z.B. smoking_status_smokes, smoking_status_never
     smoked) wieder zum ursprünglichen Merkmal zusammen. SHAP-Werte sind additiv,
@@ -184,7 +192,18 @@ with tab_stroke:
             st.write(f"- {label}: {richtung} das Risiko um {abs(value):.2f} %")
 
 with tab_heart:
-    h_age = st.number_input("Alter", min_value=0, max_value=120, value=30, key="h_age")
+    h_age_min, h_age_max = load_heart_age_range()
+    h_age = st.number_input(
+        "Alter",
+        min_value=h_age_min,
+        max_value=h_age_max,
+        value=min(max(30, h_age_min), h_age_max),
+        key="h_age",
+        help=(
+            f"Erlaubter Bereich: {h_age_min} bis {h_age_max} Jahre. "
+            "Das Modell wurde mit Personen in diesem Altersbereich trainiert."
+        ),
+    )
     h_sex = st.selectbox("Geschlecht", ["Männlich", "Weiblich"], key="h_sex")
 
     # Reihenfolge entspricht dem numerischen Code im Trainingsdatensatz (0-3)
@@ -372,3 +391,8 @@ with tab_heart:
             label = feature_labels.get(feature, feature)
             richtung = "erhöht" if value > 0 else "senkt"
             st.write(f"- {label}: {richtung} das Risiko um {abs(value):.2f} %")
+
+        st.caption(
+            "Die Einflüsse gelten nur im Zusammenspiel der eingegebenen Werte und "
+            "sind keine allgemeine medizinische Aussage."
+        )
