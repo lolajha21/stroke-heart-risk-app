@@ -1,3 +1,5 @@
+import math
+
 import joblib
 import pandas as pd
 import shap
@@ -50,11 +52,12 @@ def load_heart_background():
 
 
 @st.cache_data
-def load_heart_age_range():
+def load_age_range(csv_path):
     """Kleinstes und größtes Alter im Trainingsdatensatz, damit das Eingabefeld
-    nicht außerhalb des Bereichs liegt, den das Modell kennt."""
-    df = pd.read_csv("data/heart.csv")
-    return int(df["age"].min()), int(df["age"].max())
+    nicht außerhalb des Bereichs liegt, den das Modell kennt. Auf ganze Jahre
+    gerundet (ab-/aufgerundet), da stroke.csv auch Kommawerte wie 0.08 enthält."""
+    df = pd.read_csv(csv_path)
+    return math.floor(df["age"].min()), math.ceil(df["age"].max())
 
 
 def group_contributions(feature_names, contributions, kategorische_spalten):
@@ -73,7 +76,17 @@ def group_contributions(feature_names, contributions, kategorische_spalten):
 
 
 with tab_stroke:
-    age = st.number_input("Alter", min_value=0, max_value=120, value=30)
+    age_min, age_max = load_age_range("data/stroke.csv")
+    age = st.number_input(
+        "Alter",
+        min_value=age_min,
+        max_value=age_max,
+        value=min(max(30, age_min), age_max),
+        help=(
+            f"Erlaubter Bereich: {age_min} bis {age_max} Jahre. "
+            "Das Modell wurde mit Personen in diesem Altersbereich trainiert."
+        ),
+    )
     hypertension = st.selectbox("Bluthochdruck (Hypertonie)", ["Ja", "Nein"])
     heart_disease = st.selectbox("Herzerkrankung", ["Ja", "Nein"])
     avg_glucose_level = st.number_input(
@@ -191,8 +204,13 @@ with tab_stroke:
             richtung = "erhöht" if value > 0 else "senkt"
             st.write(f"- {label}: {richtung} das Risiko um {abs(value):.2f} %")
 
+        st.caption(
+            "Die Einflüsse gelten nur im Zusammenspiel der eingegebenen Werte und "
+            "sind keine allgemeine medizinische Aussage."
+        )
+
 with tab_heart:
-    h_age_min, h_age_max = load_heart_age_range()
+    h_age_min, h_age_max = load_age_range("data/heart.csv")
     h_age = st.number_input(
         "Alter",
         min_value=h_age_min,
